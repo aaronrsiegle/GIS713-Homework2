@@ -1,0 +1,44 @@
+---
+title: "GIS713-Homework2"
+author: "Aaron_Siegle"
+date: "2026-09-15"
+output: html_document
+---
+
+```{r}
+# download packages 
+library(RColorBrewer)
+library(spatstat)
+library(sf)
+library(raster)
+library(data.table)
+```
+
+```{r}
+# Path to data 
+path_to_data <- "C:/Users/aasie/OneDrive/Documentos/GIS713-Homework2"
+```
+
+
+```{r}
+# Import data
+paracou_shp <- shapefile(file.path(path_to_data, "paracou.shp"))
+paracou_window <- shapefile(file.path(path_to_data, "paracou_window.shp"))
+```
+
+```{r}
+names(paracou_shp)
+names(paracou_window)
+```
+```{r}
+# Calculate diameter at breast height from BasalArea 
+paracou_shp$DBH <- sqrt((paracou_shp$BasalArea/pi) *2)
+print(paracou_shp)
+```
+
+
+```{r}
+#1: Create a map of the tree locations with symbol sizes proportional to diameter at breast height, and which distinguishes V. Americana and Q. Rosea from each other and other species.
+plot(paracou_shp, col= paracou_shp$DBH)
+```
+
