@@ -12,6 +12,7 @@ library(spatstat)
 library(sf)
 library(raster)
 library(data.table)
+library(classInt)
 ```
 
 ```{r}
@@ -39,6 +40,106 @@ print(paracou_shp)
 
 ```{r}
 #1: Create a map of the tree locations with symbol sizes proportional to diameter at breast height, and which distinguishes V. Americana and Q. Rosea from each other and other species.
-plot(paracou_shp, col= paracou_shp$DBH)
+# Make the DBH values continuous
+jenks_dbh <- classIntervals(paracou_shp$DBH, n=5, style= "jenks")
+dbh_breaks <- jenks_dbh$brks
+dbh_vals <- paracou_shp$DBH
+cex_vals <- (dbh_vals - min(dbh_vals)) / (max(dbh_vals) - min(dbh_vals)) * 3 + 0.5
+# Make the plot
+point_col <- adjustcolor("black", alpha.f = 0.5)
+plot(paracou_shp,
+     pch = as.integer(as.factor(paracou_shp$Species)),
+     cex = cex_vals,
+     col = point_col)
+title("Diameter at Breast Height and Species of Trees in the Paracou Forest")
+legend("topleft", 
+       legend = unique(paracou_shp$Species), 
+       pch = unique(as.integer(as.factor(paracou_shp$Species))),
+       title = "Species")
+# Making the continuous color palette and breaks
+cex_breaks <- (dbh_breaks - min(dbh_vals)) / (max(dbh_vals) - min(dbh_vals)) * 3 + 0.5
+legend("topright", 
+       legend = round(dbh_breaks, 1),
+       pch = 21,
+       pt.cex = cex_breaks, 
+       title = "Diameter at\nBreast Height (cm)")
+```
+```{r}
+# Question 2 
+# function to automate K to L conversion 
+KtoL <- function(Kobj){
+    # Function to convert Kest objects to Lest objects
+    list(
+        r=Kobj$r,
+        obs=sqrt(Kobj$obs / pi) - Kobj$r,
+        lo=sqrt(Kobj$lo / pi) - Kobj$r,
+        hi=sqrt(Kobj$hi / pi) - Kobj$r,
+        theo=sqrt(Kobj$theo / pi) - Kobj$r
+    )
+}
+```
+
+
+```{r}
+# plotting function for Kest envelopes 
+PlotKenvAsL <- function(Kobj, poly_col="#BDD7E7", obs_col="#636363", exp_col="#A50F15", ...){
+    Lobj <- KtoL(Kobj)
+    polyx <- c(Lobj$r, rev(Lobj$r))
+    polyy <- c(Lobj$lo, rev(Lobj$hi))
+    xlim <- range(Lobj$r)
+    ylim <- range(c(Lobj$obs, Lobj$theo, Lobj$lo, Lobj$hi))
+    plot(NA, NA, xlim=xlim, ylim=ylim, type="n", xlab=expression(italic("r")), ylab=expression(italic("L(r)")), ...)
+    polygon(x=polyx, y=polyy, col=poly_col, border=NA)
+    points(Lobj$r, Lobj$obs, type="l", lty=1, col=obs_col, lwd=2)
+    if(length(Lobj$theo) > 0) points(Lobj$r, Lobj$theo, type="l", lty=2, col=exp_col)
+}
+```
+
+
+```{r}
+# Convert the paracou data from a sf object to a ppp object 
+paracou_win <- as.owin(st_as_sf(paracou_window))
+paracou_ppp <- ppp(
+  x = coordinates(paracou_shp)[, 1], 
+  y = coordinates(paracou_shp)[, 2], 
+  window = paracou_win, 
+  marks = paracou_shp$Species
+)
+```
+
+
+```{r}
+# Testing for V. Americana 
+# Subset data
+va_ppp <- paracou_ppp[marks(paracou_ppp) == "V. Americana"]
+
+# CSR Test
+set.seed(42)
+ll_env_va <- envelope(va_ppp, Kest)
+
+# Plot results
+PlotKenvAsL(ll_env_va)                             
+```
+
+```{r}
+# Testing for Q. Rosea 
+# Subset data
+qr_ppp <- paracou_ppp[marks(paracou_ppp) == "Q. Rosea"]
+
+# CSR Test
+set.seed(42)
+ll_env_qr <- envelope(qr_ppp, Kest)
+
+# Plot results
+PlotKenvAsL(ll_env_qr) 
+
+```
+```{r}
+# CSR Test for all trees 
+set.seed(42)
+ll_env_all <- envelope(paracou_ppp, Kest)
+
+# Plot results
+PlotKenvAsL(ll_env_all) 
 ```
 
