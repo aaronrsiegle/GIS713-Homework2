@@ -202,25 +202,70 @@ PlotKenvAsL <- function(Kobj, poly_col="#BDD7E7", obs_col="#636363", exp_col="#A
 }
 ```
 
+
+```{r}
+# Creating my own shift function because RShift is not working due to the irregular shape 
+MyShift <- function(x, max_shift = 50) {
+  original_marks <- marks(x)
+  shifted <- rshift(x, 
+                    group = as.factor(marks(x) == "V. Americana"),
+                    edge = "erode")
+  marks(shifted) <- original_marks
+  return(shifted)
+}
+```
+
+
 ```{r}
 # Using Ripley's K to test for attraction/repulsion 
-fJ <- function(x) marks(paracou_ppp == "V. Americana")
-fA <- function(x) marks(paracou_ppp == "Q. Rosea")
+fJ <- function(x) marks(x) == "V. Americana"
+fA <- function(x) marks(x) == "Q. Rosea"
 
 ll_env_torodial <- envelope(paracou_ppp, 
                             Kmulti,
                             I=fJ,
                             J=fA,
                             simulate = expression(
-                              rshift(
-                                paracou_ppp, 
-                                group = as.factor(
-                                  marks(
-                                    paracou_ppp == "V. Americana"
-                                  )
-                                ), edge = "erode"
-                              )
-                            ))
+                              MyShift(paracou_ppp)))
 PlotKenvAsL(ll_env_torodial)
+```
+
+```{r}
+# Adding DBH to paracou_ppp
+marks(paracou_ppp) <- paracou_shp$DBH
+```
+
+
+```{r}
+# Question 5: Assume that juvenile trees are those with DBH <= 14 and mature trees have DBH >= 40. Is there evidence for a nonrandom spatial process producing the observed pattern of juvenile and mature trees? What might this mean in terms of ecology? As before: provide any plots (with simulation envelopes where necessary) to support your assertions.
+MyShift_Five <- function(x){
+  x_a <- x[marks(x) <= 14]
+    x_b <- x[marks(x) >= 40]
+    x_a <- rshift(x_a, edge="erode")
+    x_b <- rshift(x_b, edge="erode")
+    X <- superimpose(x_a, x_b, W=paracou_win)
+    return(X)
+}
+```
+
+
+```{r}
+fJ <- function(x) marks(x) <= 14
+fA <- function(x) marks(x) >= 40
+
+ll_env_toroidal_mat <- envelope(paracou_ppp, Kmulti, I=fJ, J=fA,
+                                simulate=expression(MyShift_Five(paracou_ppp)))
+PlotKenvAsL(ll_env_toroidal_mat)
+```
+
+```{r}
+str(paracou_shp$DBH)          # should be numeric
+sum(paracou_shp$DBH <= 14, na.rm=TRUE)  # juvenile count > 0?
+sum(paracou_shp$DBH >= 90, na.rm=TRUE)  # mature count > 0?
+```
+```{r}
+summary(paracou_shp$DBH)
+hist(paracou_shp$DBH, breaks=50)
+sum(is.na(paracou_shp$DBH))
 ```
 
