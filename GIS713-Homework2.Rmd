@@ -64,39 +64,9 @@ legend("topright",
        pt.cex = cex_breaks, 
        title = "Diameter at\nBreast Height (cm)")
 ```
-```{r}
-# Question 2 
-# function to automate K to L conversion 
-KtoL <- function(Kobj){
-    # Function to convert Kest objects to Lest objects
-    list(
-        r=Kobj$r,
-        obs=sqrt(Kobj$obs / pi) - Kobj$r,
-        lo=sqrt(Kobj$lo / pi) - Kobj$r,
-        hi=sqrt(Kobj$hi / pi) - Kobj$r,
-        theo=sqrt(Kobj$theo / pi) - Kobj$r
-    )
-}
-```
-
 
 ```{r}
-# plotting function for Kest envelopes 
-PlotKenvAsL <- function(Kobj, poly_col="#BDD7E7", obs_col="#636363", exp_col="#A50F15", ...){
-    Lobj <- KtoL(Kobj)
-    polyx <- c(Lobj$r, rev(Lobj$r))
-    polyy <- c(Lobj$lo, rev(Lobj$hi))
-    xlim <- range(Lobj$r)
-    ylim <- range(c(Lobj$obs, Lobj$theo, Lobj$lo, Lobj$hi))
-    plot(NA, NA, xlim=xlim, ylim=ylim, type="n", xlab=expression(italic("r")), ylab=expression(italic("L(r)")), ...)
-    polygon(x=polyx, y=polyy, col=poly_col, border=NA)
-    points(Lobj$r, Lobj$obs, type="l", lty=1, col=obs_col, lwd=2)
-    if(length(Lobj$theo) > 0) points(Lobj$r, Lobj$theo, type="l", lty=2, col=exp_col)
-}
-```
-
-
-```{r}
+# Question 2: Is there evidence for deviation from CSR expectation for all trees, V. Americana alone, or Q. Rosea alone in nearest neighbor distances for all trees? Provide plots and text supporting your findings (making sure to compute simulation envelopes if necessary).
 # Convert the paracou data from a sf object to a ppp object 
 paracou_win <- as.owin(st_as_sf(paracou_window))
 paracou_ppp <- ppp(
@@ -115,11 +85,16 @@ va_ppp <- paracou_ppp[marks(paracou_ppp) == "V. Americana"]
 
 # CSR Test
 set.seed(42)
-ll_env_va <- envelope(va_ppp, Kest)
+ll_env_va <- envelope(va_ppp, Gest)
 
 # Plot results
-PlotKenvAsL(ll_env_va)                             
+plot(ll_env_va, 
+    main = "G Function for V. Americana",
+    xlab = "r", 
+    ylab = "G(r)"
+    )                            
 ```
+The expected distribution of V. Americana trees falls within the credibility interval for most distances but then falls outside the credibility interval between 7-8 meters and at 11 meters.At these distances, the distribution of V. Americana exceeds the upper bound of the credibility intervals by small amounts but does not constitute a significant deviation away from CSR. As a whole, we can say that V. Americana does not deviate away from CSR. 
 
 ```{r}
 # Testing for Q. Rosea 
@@ -128,18 +103,124 @@ qr_ppp <- paracou_ppp[marks(paracou_ppp) == "Q. Rosea"]
 
 # CSR Test
 set.seed(42)
-ll_env_qr <- envelope(qr_ppp, Kest)
+ll_env_qr <- envelope(qr_ppp, Gest)
 
 # Plot results
-PlotKenvAsL(ll_env_qr) 
+plot(ll_env_qr, 
+    main = "G Function for Q. Rosea",
+    xlab = "r", 
+    ylab = "G(r)"
+    )      
 
 ```
+The distribution of Q. Rosea trees falls within the credibility interval for all nearest neighbor distances within a 35 meter radius. The distribution resembles a step function pattern that oscillates around the G-Function while remaining within the boundaries of the credibility interval. We fail to reject the null hypothesis that the Q. Rosea distribution resembles CSR.
+
 ```{r}
 # CSR Test for all trees 
 set.seed(42)
-ll_env_all <- envelope(paracou_ppp, Kest)
+ll_env_all <- envelope(paracou_ppp, Gest)
 
 # Plot results
-PlotKenvAsL(ll_env_all) 
+plot(ll_env_all, 
+    main = "G Function for All Trees in the Paracou Forest",
+    xlab = "r", 
+    ylab = "G(r)"
+    )      
+```
+The observed distribution of trees in the Paracou forest closely follows the G Function but still exceeds the credibility intervals at numerous distances. The credibility interval is smaller here than before because we have a larger number of events, which in this case are trees, to test against CSR. Despite these slight deviations, the distribution of trees largely resembles CSR as a whole. 
+
+```{r}
+# Question 3: Are there fewer/more neighboring trees at particular radiuses for all trees, V. Americana, and Q. Rosea than would be expected under CSR? Provide plots and text supporting your findings (making sure to compute simulation envelopes if necessary). What does this mean in the "real world"?
+# Use F function here 
+# Testing for V. Americana
+set.seed(42)
+ll_env_va_f <- envelope(va_ppp, Fest)
+
+# Plot results
+plot(ll_env_va_f, 
+    main = "F Function for V. Americana",
+    xlab = "r", 
+    ylab = "G(r)"
+    )             
+```
+There are fewer neighboring V. Americana than expected under CSR at distances greater than 15 meters and similar number of neighboring V. Americana as would be expected under CSR at distances nearer than 15 meters. In the world, this means that you are more likely to see other V. Americana around the original tree but as you travel further away from the V. Americana tree you are less likely to see other V. Americana trees. 
+```{r}
+# Testing for Q. Rosea 
+set.seed(42)
+ll_env_qr_f <- envelope(qr_ppp, Fest)
+
+# Plot results
+plot(ll_env_qr_f, 
+    main = "F Function for Q. Rosea",
+    xlab = "r", 
+    ylab = "G(r)"
+    )            
+```
+You are as likely to see a neighboring Q. Rosea across different spatial scales. You could say that the distribution of Q. Rosea trees is independent from the distance of other Q. Rosea trees. In this way, the dispersion of Q. Rosea trees is random distributed. In the real world, this means that you are no more likely to see a Q. Rosea tree 1 meter away from another Q. Rosea tree than you are to encounter one 30 meters away from the same Q. Rosea tree. 
+
+```{r}
+# Testing for all trees 
+set.seed(42)
+ll_env_all_f <- envelope(paracou_ppp, Fest)
+
+# Plot results
+plot(ll_env_all_f, 
+    main = "F Function for All Trees in the Paracou Forest",
+    xlab = "r", 
+    ylab = "G(r)"
+    )            
+```
+When you look at all the trees in the Paracou forest, the amount of neighboring trees matches the expectations for CSR when looking under distances of 2.5 meters. When you look at distances greater than 2.5 meters, there more neighboring trees than you would expect under strict CSR.However, this deviation from the expected value is not significant as the distribution of trees hugs the upper boundary of the credibility interval while still following the overall trend of the expected distribution. In the real world, this means that you are more likely to see trees that are further than 2.5 meters apart than you are likely to see trees that are directly adjacent to each other. 
+
+```{r}
+# Question 4: Is there evidence of attraction/repulsion between V. Americana and Q. Rosea species? Again, provide any plots (with simulation envelopes where necessary) to support your assertions.
+# function to automate K to L conversion 
+KtoL <- function(Kobj){
+    # Function to convert Kest objects to Lest objects
+    list(
+        r=Kobj$r,
+        obs=sqrt(Kobj$obs / pi) - Kobj$r,
+        lo=sqrt(Kobj$lo / pi) - Kobj$r,
+        hi=sqrt(Kobj$hi / pi) - Kobj$r,
+        theo=sqrt(Kobj$theo / pi) - Kobj$r
+    )
+}
+```
+
+```{r}
+# plotting function for Kest envelopes 
+PlotKenvAsL <- function(Kobj, poly_col="#BDD7E7", obs_col="#636363", exp_col="#A50F15", ...){
+    Lobj <- KtoL(Kobj)
+    polyx <- c(Lobj$r, rev(Lobj$r))
+    polyy <- c(Lobj$lo, rev(Lobj$hi))
+    xlim <- range(Lobj$r)
+    ylim <- range(c(Lobj$obs, Lobj$theo, Lobj$lo, Lobj$hi))
+    plot(NA, NA, xlim=xlim, ylim=ylim, type="n", xlab=expression(italic("r")), ylab=expression(italic("L(r)")), ...)
+    polygon(x=polyx, y=polyy, col=poly_col, border=NA)
+    points(Lobj$r, Lobj$obs, type="l", lty=1, col=obs_col, lwd=2)
+    if(length(Lobj$theo) > 0) points(Lobj$r, Lobj$theo, type="l", lty=2, col=exp_col)
+}
+```
+
+```{r}
+# Using Ripley's K to test for attraction/repulsion 
+fJ <- function(x) marks(paracou_ppp == "V. Americana")
+fA <- function(x) marks(paracou_ppp == "Q. Rosea")
+
+ll_env_torodial <- envelope(paracou_ppp, 
+                            Kmulti,
+                            I=fJ,
+                            J=fA,
+                            simulate = expression(
+                              rshift(
+                                paracou_ppp, 
+                                group = as.factor(
+                                  marks(
+                                    paracou_ppp == "V. Americana"
+                                  )
+                                ), edge = "erode"
+                              )
+                            ))
+PlotKenvAsL(ll_env_torodial)
 ```
 
