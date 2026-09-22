@@ -205,7 +205,13 @@ PlotKenvAsL <- function(Kobj, poly_col="#BDD7E7", obs_col="#636363", exp_col="#A
 
 ```{r}
 # Adding DBH to paracou_ppp
-marks(paracou_ppp) <- paracou_shp$DBH
+paracou_ppp_dbh <- ppp(
+  x = coordinates(paracou_shp)[, 1],
+  y = coordinates(paracou_shp)[, 2],
+  window = paracou_win,
+  marks = paracou_shp$DBH
+)
+dbh_marks <- marks(paracou_ppp_dbh)
 ```
 
 
@@ -222,29 +228,20 @@ ll_env_va_qr_indep <- envelope(paracou_ppp,
 PlotKenvAsL(ll_env_va_qr_indep,
             main = "Attraction/Repulsion between V. Americana and Q. Rosea")
 ```
-add text/analysis here
+Yes, there is evidence of repulsion between the V. Americana and Q. Rosea at distances greater than 20 meters. At these distances, the relative distribution of the two trees exceeds the lower bound of the confidence envelope, meaning that the trees species are further away from each other than we would expect under CSR. At distances less than 20 meters, we find that there is no meaningful spatial interaction between V. Americana and Q. Rosea trees because the distribution of the trees stays within the confidence envelope, indicating a similar pattern to CSR. 
 
 ```{r}
-# Question 5: Assume that juvenile trees are those with DBH <= 14 and mature trees have DBH >= 40. Is there evidence for a nonrandom spatial process producing the observed pattern of juvenile and mature trees? What might this mean in terms of ecology? As before: provide any plots (with simulation envelopes where necessary) to support your assertions.
+# Question 5: Assume that juvenile trees are those with DBH <= 14 and mature trees have DBH >= 80. Is there evidence for a nonrandom spatial process producing the observed pattern of juvenile and mature trees? What might this mean in terms of ecology? As before: provide any plots (with simulation envelopes where necessary) to support your assertions.
 
 set.seed(42)
-# Need to remake the ppp object with the DBH readings 
-paracou_ppp_dbh <- ppp(
-  x = coordinates(paracou_shp)[, 1],
-  y = coordinates(paracou_shp)[, 2],
-  window = paracou_win,
-  marks = paracou_shp$DBH
-)
-
-dbh_marks <- marks(paracou_ppp_dbh)
 
 ll_env_juv_mat_indep <- envelope(paracou_ppp_dbh,
                                   Kmulti,
                                   I = !is.na(dbh_marks) & dbh_marks <= 14,
-                                  J = !is.na(dbh_marks) & dbh_marks >= 40)
+                                  J = !is.na(dbh_marks) & dbh_marks >= 80)
 
 PlotKenvAsL(ll_env_juv_mat_indep,
             main = "Relationship between Juvenile and Mature Trees")
 ```
-add text/analysis here
+Yes, we find that there is repulsion between juvenile and adult trees between the distances of 15 and 45 meters. The results indicate that the process is random 
 
