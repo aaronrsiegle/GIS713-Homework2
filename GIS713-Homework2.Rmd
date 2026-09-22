@@ -5,7 +5,7 @@ date: "2026-09-15"
 output: html_document
 ---
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # download packages 
 library(RColorBrewer)
 library(spatstat)
@@ -21,7 +21,7 @@ path_to_data <- "C:/Users/aasie/OneDrive/Documentos/GIS713-Homework2"
 ```
 
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # Import data
 paracou_shp <- shapefile(file.path(path_to_data, "paracou.shp"))
 paracou_window <- shapefile(file.path(path_to_data, "paracou_window.shp"))
@@ -66,7 +66,7 @@ legend("topright",
        title = "Diameter at\nBreast Height (cm)")
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # Question 2: Is there evidence for deviation from CSR expectation for all trees, V. Americana alone, or Q. Rosea alone in nearest neighbor distances for all trees? Provide plots and text supporting your findings (making sure to compute simulation envelopes if necessary).
 # Convert the paracou data from a sf object to a ppp object 
 paracou_win <- as.owin(st_as_sf(paracou_window))
@@ -94,6 +94,7 @@ plot(ll_env_va,
     ylab = "G(r)"
     )                            
 ```
+
 The expected distribution of V. Americana trees falls within the credibility interval for most distances but then falls outside the credibility interval between 7-8 meters and at 11 meters.At these distances, the distribution of V. Americana exceeds the upper bound of the credibility intervals by small amounts but does not constitute a significant deviation away from CSR. As a whole, we can say that V. Americana does not deviate away from CSR. 
 
 ```{r}
@@ -113,6 +114,7 @@ plot(ll_env_qr,
     )      
 
 ```
+
 The distribution of Q. Rosea trees falls within the credibility interval for all nearest neighbor distances within a 35 meter radius. The distribution resembles a step function pattern that oscillates around the G-Function while remaining within the boundaries of the credibility interval. We fail to reject the null hypothesis that the Q. Rosea distribution resembles CSR.
 
 ```{r}
@@ -127,6 +129,7 @@ plot(ll_env_all,
     ylab = "G(r)"
     )      
 ```
+
 The observed distribution of trees in the Paracou forest closely follows the G Function but still exceeds the credibility intervals at numerous distances. The credibility interval is smaller here than before because we have a larger number of events, which in this case are trees, to test against CSR. Despite these slight deviations, the distribution of trees largely resembles CSR as a whole. 
 
 ```{r}
@@ -143,7 +146,9 @@ plot(ll_env_va_f,
     ylab = "G(r)"
     )             
 ```
-There are fewer neighboring V. Americana than expected under CSR at distances greater than 15 meters and similar number of neighboring V. Americana as would be expected under CSR at distances nearer than 15 meters. In the world, this means that you are more likely to see other V. Americana around the original tree but as you travel further away from the V. Americana tree you are less likely to see other V. Americana trees. 
+
+There are fewer neighboring V. Americana trees than expected under CSR at distances greater than 15 meters and similar number of neighboring V. Americana trees as would be expected under CSR at distances nearer than 15 meters. In the real world, this means that you are more likely to see other V. Americana trees around the original tree but as you travel further away from the V. Americana tree you are less likely to see other V. Americana trees. 
+
 ```{r}
 # Testing for Q. Rosea 
 set.seed(42)
@@ -156,7 +161,8 @@ plot(ll_env_qr_f,
     ylab = "G(r)"
     )            
 ```
-You are as likely to see a neighboring Q. Rosea across different spatial scales. You could say that the distribution of Q. Rosea trees is independent from the distance of other Q. Rosea trees. In this way, the dispersion of Q. Rosea trees is random distributed. In the real world, this means that you are no more likely to see a Q. Rosea tree 1 meter away from another Q. Rosea tree than you are to encounter one 30 meters away from the same Q. Rosea tree. 
+
+You are as likely to see a neighboring Q. Rosea tree across different spatial scales. You could say that the distribution of Q. Rosea trees is independent from the distance of other Q. Rosea trees. In this way, the dispersion of Q. Rosea trees is random distributed. In the real world, this means that you are no more likely to see a Q. Rosea tree 1 meter away from another Q. Rosea tree than you are to encounter one 30 meters away from the same Q. Rosea tree. 
 
 ```{r}
 # Testing for all trees 
@@ -170,6 +176,7 @@ plot(ll_env_all_f,
     ylab = "G(r)"
     )            
 ```
+
 When you look at all the trees in the Paracou forest, the amount of neighboring trees matches the expectations for CSR when looking under distances of 2.5 meters. When you look at distances greater than 2.5 meters, there more neighboring trees than you would expect under strict CSR.However, this deviation from the expected value is not significant as the distribution of trees hugs the upper boundary of the credibility interval while still following the overall trend of the expected distribution. In the real world, this means that you are more likely to see trees that are further than 2.5 meters apart than you are likely to see trees that are directly adjacent to each other. 
 
 ```{r}
@@ -228,6 +235,7 @@ ll_env_va_qr_indep <- envelope(paracou_ppp,
 PlotKenvAsL(ll_env_va_qr_indep,
             main = "Attraction/Repulsion between V. Americana and Q. Rosea")
 ```
+
 Yes, there is evidence of repulsion between the V. Americana and Q. Rosea at distances greater than 20 meters. At these distances, the relative distribution of the two trees exceeds the lower bound of the confidence envelope, meaning that the trees species are further away from each other than we would expect under CSR. At distances less than 20 meters, we find that there is no meaningful spatial interaction between V. Americana and Q. Rosea trees because the distribution of the trees stays within the confidence envelope, indicating a similar pattern to CSR. 
 
 ```{r}
@@ -243,5 +251,6 @@ ll_env_juv_mat_indep <- envelope(paracou_ppp_dbh,
 PlotKenvAsL(ll_env_juv_mat_indep,
             main = "Relationship between Juvenile and Mature Trees")
 ```
-Yes, we find that there is repulsion between juvenile and adult trees between the distances of 15 and 45 meters. The results indicate that the process is random 
+
+Yes, we find that there is repulsion between juvenile and adult trees between the distances of 15 and 45 meters. The results indicate that the process is random at shorter (less than 15 meter) and longer (greater than 45 meter) distances. Regarding ecology, this may mean that adult trees are quite large and therefore discourages the growth of juvenile trees within a 45 meter radius. However, this fails to explain why the relationship between adult and juvenile trees at distances that are less than 15 meters exhibit CSR instead of repulsion. This may be due to the fact that juvenile seedlings land close to the base of the adult tree but then fail to grow significantly due to resource competition with the adult tree. 
 
