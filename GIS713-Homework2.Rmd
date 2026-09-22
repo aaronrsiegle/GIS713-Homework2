@@ -31,6 +31,7 @@ paracou_window <- shapefile(file.path(path_to_data, "paracou_window.shp"))
 names(paracou_shp)
 names(paracou_window)
 ```
+
 ```{r}
 # Calculate diameter at breast height from BasalArea 
 paracou_shp$DBH <- sqrt((paracou_shp$BasalArea/pi) *2)
@@ -76,7 +77,6 @@ paracou_ppp <- ppp(
   marks = paracou_shp$Species
 )
 ```
-
 
 ```{r}
 # Testing for V. Americana 
@@ -204,68 +204,47 @@ PlotKenvAsL <- function(Kobj, poly_col="#BDD7E7", obs_col="#636363", exp_col="#A
 
 
 ```{r}
-# Creating my own shift function because RShift is not working due to the irregular shape 
-MyShift <- function(x, max_shift = 50) {
-  original_marks <- marks(x)
-  shifted <- rshift(x, 
-                    group = as.factor(marks(x) == "V. Americana"),
-                    edge = "erode")
-  marks(shifted) <- original_marks
-  return(shifted)
-}
-```
-
-
-```{r}
-# Using Ripley's K to test for attraction/repulsion 
-fJ <- function(x) marks(x) == "V. Americana"
-fA <- function(x) marks(x) == "Q. Rosea"
-
-ll_env_torodial <- envelope(paracou_ppp, 
-                            Kmulti,
-                            I=fJ,
-                            J=fA,
-                            simulate = expression(
-                              MyShift(paracou_ppp)))
-PlotKenvAsL(ll_env_torodial)
-```
-
-```{r}
 # Adding DBH to paracou_ppp
 marks(paracou_ppp) <- paracou_shp$DBH
 ```
 
 
 ```{r}
+# Doing Ripley's K to test relationship
+set.seed(42)
+ll_env_va_qr_indep <- envelope(paracou_ppp,
+                                Kmulti,
+                                I = marks(paracou_ppp) == "V. Americana",
+                                J = marks(paracou_ppp) == "Q. Rosea")
+```
+```{r}
+# Make the plot
+PlotKenvAsL(ll_env_va_qr_indep,
+            main = "Attraction/Repulsion between V. Americana and Q. Rosea")
+```
+add text/analysis here
+
+```{r}
 # Question 5: Assume that juvenile trees are those with DBH <= 14 and mature trees have DBH >= 40. Is there evidence for a nonrandom spatial process producing the observed pattern of juvenile and mature trees? What might this mean in terms of ecology? As before: provide any plots (with simulation envelopes where necessary) to support your assertions.
-MyShift_Five <- function(x){
-  x_a <- x[marks(x) <= 14]
-    x_b <- x[marks(x) >= 40]
-    x_a <- rshift(x_a, edge="erode")
-    x_b <- rshift(x_b, edge="erode")
-    X <- superimpose(x_a, x_b, W=paracou_win)
-    return(X)
-}
-```
 
+set.seed(42)
+# Need to remake the ppp object with the DBH readings 
+paracou_ppp_dbh <- ppp(
+  x = coordinates(paracou_shp)[, 1],
+  y = coordinates(paracou_shp)[, 2],
+  window = paracou_win,
+  marks = paracou_shp$DBH
+)
 
-```{r}
-fJ <- function(x) marks(x) <= 14
-fA <- function(x) marks(x) >= 40
+dbh_marks <- marks(paracou_ppp_dbh)
 
-ll_env_toroidal_mat <- envelope(paracou_ppp, Kmulti, I=fJ, J=fA,
-                                simulate=expression(MyShift_Five(paracou_ppp)))
-PlotKenvAsL(ll_env_toroidal_mat)
-```
+ll_env_juv_mat_indep <- envelope(paracou_ppp_dbh,
+                                  Kmulti,
+                                  I = !is.na(dbh_marks) & dbh_marks <= 14,
+                                  J = !is.na(dbh_marks) & dbh_marks >= 40)
 
-```{r}
-str(paracou_shp$DBH)          # should be numeric
-sum(paracou_shp$DBH <= 14, na.rm=TRUE)  # juvenile count > 0?
-sum(paracou_shp$DBH >= 90, na.rm=TRUE)  # mature count > 0?
+PlotKenvAsL(ll_env_juv_mat_indep,
+            main = "Relationship between Juvenile and Mature Trees")
 ```
-```{r}
-summary(paracou_shp$DBH)
-hist(paracou_shp$DBH, breaks=50)
-sum(is.na(paracou_shp$DBH))
-```
+add text/analysis here
 
